@@ -1,3 +1,5 @@
 cute-names.iml
 .idea
-/target
+/*/*.iml
+.vertx/
+target/

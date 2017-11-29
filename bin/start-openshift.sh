@@ -11,7 +11,7 @@ oc adm policy add-cluster-role-to-user cluster-admin developer
 oc login -u developer -p developer
 oc project openshift
 oc adm policy add-cluster-role-to-group system:openshift:templateservicebroker-client system:unauthenticated system:authenticated
-oc create -f service-catalog/infinispan-centos7-imagestream.json || true
-oc create -f service-catalog/infinispan-ephemeral-template.json || true
+oc create -f infinispan-centos7-imagestream.json || true
+oc create -f infinispan-ephemeral-template.json || true
 
 oc project myproject

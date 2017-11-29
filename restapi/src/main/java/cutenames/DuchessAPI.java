@@ -1,33 +1,22 @@
 package cutenames;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.client.hotrod.RemoteCacheManager;
-import org.infinispan.client.hotrod.configuration.Configuration;
-import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
-
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.Router;
-import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.reactivex.core.http.HttpServerResponse;
+import io.vertx.reactivex.ext.web.Router;
+import io.vertx.reactivex.ext.web.RoutingContext;
+import io.vertx.reactivex.ext.web.handler.BodyHandler;
 
-public class DuchessAPI extends AbstractVerticle {
+public class DuchessAPI extends CacheAccessVerticle {
 
-   private static final Logger logger = Logger.getLogger(DuchessAPI.class.getName());
-
-   protected RemoteCacheManager client;
-   protected RemoteCache<Integer, String> defaultCache;
+   private final Logger logger = Logger.getLogger(DuchessAPI.class.getName());
 
    @Override
-   public void start() throws Exception {
-      initCache(vertx);
+   protected void init() {
+      logger.info("Starting DuchessAPI");
       Router router = Router.router(vertx);
 
       router.get("/").handler(rc -> {
@@ -57,7 +46,7 @@ public class DuchessAPI extends AbstractVerticle {
                if (value == null) {
                   duchess = String.format("Duchess %s not found", id);
                   rc.response().setStatusCode(HttpResponseStatus.NOT_FOUND.code());
-               }else {
+               } else {
                   duchess = new JsonObject().put("Duchess", value).encode();
                }
                rc.response().end(duchess);
@@ -86,24 +75,8 @@ public class DuchessAPI extends AbstractVerticle {
          stopFuture.complete();
    }
 
-   protected void initCache(Vertx vertx) {
-      vertx.executeBlocking(fut -> {
-         Configuration configuration = new ConfigurationBuilder().addServer()
-               .host(config().getString("infinispan.host", "datagrid"))
-               .port(config().getInteger("infinispan.port", 11222))
-               .build();
-         client = new RemoteCacheManager(
-               configuration);
-
-         defaultCache = client.getCache();
-         defaultCache.put(42, "Oihana");
-         fut.complete();
-      }, res -> {
-         if (res.succeeded()) {
-            logger.log(Level.INFO, "Cache connection successfully done");
-         } else {
-            logger.log(Level.SEVERE, "Cache connection error", res.cause());
-         }
-      });
+   @Override
+   protected Logger getLogger() {
+      return logger;
    }
 }
