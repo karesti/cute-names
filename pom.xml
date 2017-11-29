@@ -17,8 +17,8 @@
   <properties>
     <infinispan.version>9.1.1.Final</infinispan.version>
     <vertx.version>3.5.0</vertx.version>
-    <vertx.verticle>cutenames.DuchessAPI</vertx.verticle>
-    <vertx.verticle>cutenames.SendCuteNamesAPI</vertx.verticle>
+    <vertx-maven-plugin.version>1.0.13</vertx-maven-plugin.version>
+    <fabric8-maven-plugin.version>3.5.32</fabric8-maven-plugin.version>
   </properties>
 
   <dependencyManagement>

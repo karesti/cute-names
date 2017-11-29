@@ -11,6 +11,10 @@
 
     <artifactId>socket-api</artifactId>
 
+    <properties>
+        <vertx.verticle>cutenames.SendCuteNamesAPI</vertx.verticle>
+    </properties>
+
     <dependencies>
 
         <dependency>
