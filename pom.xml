@@ -11,7 +11,7 @@
   <properties>
     <infinispan.version>9.1.1.Final</infinispan.version>
     <vertx.version>3.5.0</vertx.version>
-    <vertx.verticle>cutenames.PlayWithTheCache</vertx.verticle>
+    <vertx.verticle>cutenames.DuchessAPI</vertx.verticle>
   </properties>
 
   <dependencyManagement>
