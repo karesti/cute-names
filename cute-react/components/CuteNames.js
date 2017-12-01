@@ -6,7 +6,7 @@ const CuteNames = () => {
     eventBus.enableReconnect(true);
     var name = '';
     eventBus.onOpen = function () {
-        console.error("register");
+        console.info("register");
         eventBus.registerHandler('cute-names', function (error, message) {
             if (error === null) {
                 console.error(message.body);

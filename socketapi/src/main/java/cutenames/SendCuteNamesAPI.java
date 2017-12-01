@@ -38,7 +38,9 @@ public class SendCuteNamesAPI extends CacheAccessVerticle {
 
       vertx.createHttpServer()
             .requestHandler(router::accept)
-            .listen(config().getInteger("http.port", 8080));
+            .rxListen(config().getInteger("http.port", 8080))
+            .doOnSuccess(server -> logger.info("HTTP server started"))
+            .doOnError(t -> logger.log(Level.SEVERE, "HTTP server failed to start", t));
    }
 
    @Override
