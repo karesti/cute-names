@@ -8,6 +8,7 @@ import org.infinispan.client.hotrod.annotation.ClientListener;
 import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
 
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.bridge.PermittedOptions;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
@@ -40,7 +41,8 @@ public class SendCuteNamesAPI extends CacheAccessVerticle {
             .requestHandler(router::accept)
             .rxListen(config().getInteger("http.port", 8080))
             .doOnSuccess(server -> logger.info("HTTP server started"))
-            .doOnError(t -> logger.log(Level.SEVERE, "HTTP server failed to start", t));
+            .doOnError(t -> logger.log(Level.SEVERE, "HTTP server failed to start", t))
+            .subscribe();
    }
 
    @Override

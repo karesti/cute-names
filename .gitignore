@@ -4,4 +4,4 @@ cute-names.iml
 .vertx/
 target/
 /cute-react/node_modules/
-/cute-react/npm-debug.log
+npm-debug.log
