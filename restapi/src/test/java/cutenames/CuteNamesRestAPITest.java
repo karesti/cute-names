@@ -20,7 +20,7 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 
 @RunWith(VertxUnitRunner.class)
-public class DuchessAPITest {
+public class CuteNamesRestAPITest {
 
    private Vertx vertx;
    private int port;
@@ -40,7 +40,7 @@ public class DuchessAPITest {
                   .put("infinispan.host", host)
             );
       httpClient = vertx.createHttpClient();
-      vertx.deployVerticle(DuchessAPI.class.getName(), options, context.asyncAssertSuccess());
+      vertx.deployVerticle(CuteNamesRestAPI.class.getName(), options, context.asyncAssertSuccess());
    }
 
    @After
@@ -80,7 +80,7 @@ public class DuchessAPITest {
          response.handler(body -> {
             context.assertEquals(200, response.statusCode());
             context.assertEquals("application/json", response.headers().get("content-type"));
-            context.assertEquals("{\"name\":\"duchess\",\"version\":1}", body.toString());
+            context.assertEquals("{\"name\":\"cutenames\",\"version\":1}", body.toString());
             async.complete();
          });
       });
@@ -90,12 +90,12 @@ public class DuchessAPITest {
    public void put_cute_name_endpoint(TestContext context) {
       final Async async = context.async();
       WebClient client = WebClient.wrap(httpClient);
-      JsonObject body = new JsonObject().put("id", 123).put("name", "Fidelia");
-      client.post(port, host, "/api/duchess").sendJsonObject(body, ar -> {
+      JsonObject body = new JsonObject().put("id", "123").put("name", "Fidelia");
+      client.post(port, host, "/api/cutenames").sendJsonObject(body, ar -> {
          if (ar.succeeded()) {
             HttpResponse<Buffer> response = ar.result();
             context.assertEquals(201, response.statusCode());
-            context.assertEquals("Duchess Added", response.body().toString());
+            context.assertEquals("Cute name added", response.body().toString());
          } else {
             context.fail(ar.cause());
          }
@@ -104,11 +104,44 @@ public class DuchessAPITest {
    }
 
    @Test
-   public void put_cute_name_without_name_or_id(TestContext context) {
+   public void put_cute_name_with_bad_format(TestContext context) {
+      final Async async = context.async();
+      WebClient client = WebClient.wrap(httpClient);
+      JsonObject body = new JsonObject().put("id", 123).put("name", "Bad");
+      client.post(port, host, "/api/cutenames").sendJsonObject(body, ar -> {
+         if (ar.succeeded()) {
+            HttpResponse<Buffer> response = ar.result();
+            context.assertEquals(500, response.statusCode());
+         } else {
+            context.fail(ar.cause());
+         }
+         async.complete();
+      });
+   }
+
+   @Test
+   public void put_cute_name_without_id_endpoint(TestContext context) {
+      final Async async = context.async();
+      WebClient client = WebClient.wrap(httpClient);
+      JsonObject body = new JsonObject().put("name", "Elaia");
+      client.post(port, host, "/api/cutenames").sendJsonObject(body, ar -> {
+         if (ar.succeeded()) {
+            HttpResponse<Buffer> response = ar.result();
+            context.assertEquals(201, response.statusCode());
+            context.assertEquals("Cute name added", response.body().toString());
+         } else {
+            context.fail(ar.cause());
+         }
+         async.complete();
+      });
+   }
+
+   @Test
+   public void put_cute_name_without_name(TestContext context) {
       final Async async = context.async();
       WebClient client = WebClient.wrap(httpClient);
       JsonObject emptyBody = new JsonObject();
-      client.post(port, host, "/api/duchess").sendJsonObject(emptyBody, ar -> {
+      client.post(port, host, "/api/cutenames").sendJsonObject(emptyBody, ar -> {
          if (ar.succeeded()) {
             HttpResponse<Buffer> response = ar.result();
             context.assertEquals(400, response.statusCode());
@@ -123,10 +156,10 @@ public class DuchessAPITest {
    @Test
    public void get_cute_name_with_id(TestContext context) {
       final Async async = context.async();
-      httpClient.getNow(port, host, "/api/duchess/42", response -> {
+      httpClient.getNow(port, host, "/api/cutenames/42", response -> {
          response.handler(body -> {
             context.assertEquals(200, response.statusCode());
-            context.assertEquals("{\"Duchess\":\"Oihana\"}", body.toString());
+            context.assertEquals("{\"name\":\"Oihana\"}", body.toString());
             async.complete();
          });
       });
@@ -135,21 +168,10 @@ public class DuchessAPITest {
    @Test
    public void get_cute_name_with_unexisting_id(TestContext context) {
       final Async async = context.async();
-      httpClient.getNow(port, host, "/api/duchess/666", response -> {
+      httpClient.getNow(port, host, "/api/cutenames/666", response -> {
          response.handler(body -> {
             context.assertEquals(404, response.statusCode());
-            context.assertEquals("Duchess 666 not found", body.toString());
-            async.complete();
-         });
-      });
-   }
-
-   @Test
-   public void get_cute_name_with_bad_format_id(TestContext context) {
-      final Async async = context.async();
-      httpClient.getNow(port, host, "/api/duchess/pepe", response -> {
-         response.handler(body -> {
-            context.assertEquals(500, response.statusCode());
+            context.assertEquals("Cute name 666 not found", body.toString());
             async.complete();
          });
       });

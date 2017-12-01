@@ -12,7 +12,7 @@
     <artifactId>rest-api</artifactId>
 
     <properties>
-        <vertx.verticle>cutenames.DuchessAPI</vertx.verticle>
+        <vertx.verticle>cutenames.CuteNamesRestAPI</vertx.verticle>
     </properties>
 
     <dependencies>

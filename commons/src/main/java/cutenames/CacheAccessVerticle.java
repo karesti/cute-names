@@ -13,7 +13,7 @@ import io.vertx.reactivex.core.AbstractVerticle;
 public abstract class CacheAccessVerticle extends AbstractVerticle {
 
    protected RemoteCacheManager client;
-   protected RemoteCache<Integer, String> defaultCache;
+   protected RemoteCache<String, String> defaultCache;
 
    @Override
    public void start() throws Exception {
@@ -23,26 +23,32 @@ public abstract class CacheAccessVerticle extends AbstractVerticle {
    protected void initCache() {
       vertx.executeBlocking(fut -> {
          Configuration configuration = new ConfigurationBuilder().addServer()
-               .host(config().getString("infinispan.host", "datagrid"))
+               .host(config().getString("infinispan.host", "datagrid-hotrod"))
                .port(config().getInteger("infinispan.port", 11222))
                .build();
          client = new RemoteCacheManager(
                configuration);
 
          defaultCache = client.getCache();
-         defaultCache.put(42, "Oihana");
+         defaultCache.put("42", "Oihana");
+
+         addConfigToCache();
          fut.complete();
       }, res -> {
          if (res.succeeded()) {
             getLogger().log(Level.INFO, "Cache connection successfully done");
-            init();
+            initSuccess();
          } else {
             getLogger().log(Level.SEVERE, "Cache connection error", res.cause());
          }
       });
    }
 
-   protected abstract void init();
+   protected void addConfigToCache(){
+
+   }
+
+   protected abstract void initSuccess();
 
    protected abstract Logger getLogger();
 }
