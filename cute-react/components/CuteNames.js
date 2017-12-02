@@ -6,12 +6,13 @@ class CuteNames extends React.Component {
     constructor(props) {
         super(props);
         const eventBus = new EventBus("http://localhost:8082/eventbus");
+        var _this = this;
         eventBus.enableReconnect(true);
         eventBus.onopen = function () {
             eventBus.registerHandler('cute-names', function (error, message) {
                 if (error === null) {
                     console.info(message.body);
-
+                    _this.setState({name:message.body});
 
                 } else {
                     console.error(error, 'cute-names');
