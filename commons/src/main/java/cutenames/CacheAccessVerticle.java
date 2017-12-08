@@ -8,6 +8,7 @@ import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.configuration.Configuration;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 
+import io.vertx.core.Future;
 import io.vertx.reactivex.core.AbstractVerticle;
 
 public abstract class CacheAccessVerticle extends AbstractVerticle {
@@ -17,10 +18,6 @@ public abstract class CacheAccessVerticle extends AbstractVerticle {
 
    @Override
    public void start() throws Exception {
-     initCache();
-   }
-
-   protected void initCache() {
       vertx.executeBlocking(fut -> {
          Configuration configuration = new ConfigurationBuilder().addServer()
                .host(config().getString("infinispan.host", "datagrid-hotrod"))
@@ -30,8 +27,6 @@ public abstract class CacheAccessVerticle extends AbstractVerticle {
                configuration);
 
          defaultCache = client.getCache();
-         defaultCache.put("42", "Oihana");
-
          addConfigToCache();
          fut.complete();
       }, res -> {
@@ -44,7 +39,15 @@ public abstract class CacheAccessVerticle extends AbstractVerticle {
       });
    }
 
-   protected void addConfigToCache(){
+   @Override
+   public void stop(Future<Void> stopFuture) throws Exception {
+      if (client != null) {
+         client.stopAsync().whenComplete((e, ex) -> stopFuture.complete());
+      } else
+         stopFuture.complete();
+   }
+
+   protected void addConfigToCache() {
 
    }
 

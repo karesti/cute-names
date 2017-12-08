@@ -1,8 +1,13 @@
 package cutenames;
 
+import static cutenames.CuteNamesRestAPI.API_ENDPOINT;
+import static cutenames.CuteNamesRestAPI.CUTE_NAMES_API_ENDPOINT;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -11,7 +16,6 @@ import org.junit.runner.RunWith;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClient;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -24,8 +28,10 @@ public class CuteNamesRestAPITest {
 
    private Vertx vertx;
    private int port;
-   private HttpClient httpClient;
+   private WebClient webClient;
    private String host;
+
+   private RemoteCache<String, String> defaultCache;
 
    @Before
    public void setUp(TestContext context) throws IOException {
@@ -39,25 +45,37 @@ public class CuteNamesRestAPITest {
                   .put("http.port", port)
                   .put("infinispan.host", host)
             );
-      httpClient = vertx.createHttpClient();
+      webClient = WebClient.wrap(vertx.createHttpClient());
       vertx.deployVerticle(CuteNamesRestAPI.class.getName(), options, context.asyncAssertSuccess());
+
+      // Create a name by default
+      RemoteCacheManager cacheManager = new RemoteCacheManager();
+      defaultCache = cacheManager.getCache();
+      defaultCache.put("42", "Oihana");
    }
 
    @After
    public void after(TestContext context) {
+      defaultCache.clear();
+      defaultCache.stop();
       vertx.close(context.asyncAssertSuccess());
    }
 
    @Test
    public void welcome_endpoint(TestContext context) {
       final Async async = context.async();
-      httpClient.getNow(port, host, "/", response -> {
-         response.handler(body -> {
+      webClient.get(port, host, "/").send(ar -> {
+         if (ar.succeeded()) {
+            HttpResponse<Buffer> response = ar.result();
+            String body = response.body().toString("ISO-8859-1");
+            context.assertTrue(body.contains("Welcome"));
             context.assertEquals(200, response.statusCode());
             context.assertEquals("text/html", response.headers().get("content-type"));
-            context.assertTrue(body.toString().contains("Welcome"));
-            async.complete();
-         });
+
+         } else {
+            context.fail("welcome endpoint failed");
+         }
+         async.complete();
       });
    }
 
@@ -65,33 +83,31 @@ public class CuteNamesRestAPITest {
    public void non_existing_endpoint(TestContext context) {
       final Async async = context.async();
 
-      httpClient.getNow(port, host, "/nothing", response -> {
-         response.handler(body -> {
-            context.assertEquals(404, response.statusCode());
-            async.complete();
-         });
+      webClient.get(port, host, "/nothing").send(ar -> {
+         HttpResponse<Buffer> response = ar.result();
+         context.assertEquals(404, response.statusCode());
+         async.complete();
       });
    }
 
    @Test
    public void api_endpoint(TestContext context) {
       final Async async = context.async();
-      httpClient.getNow(port, host, "/api", response -> {
-         response.handler(body -> {
-            context.assertEquals(200, response.statusCode());
-            context.assertEquals("application/json", response.headers().get("content-type"));
-            context.assertEquals("{\"name\":\"cutenames\",\"version\":1}", body.toString());
-            async.complete();
-         });
+
+      webClient.get(port, host, API_ENDPOINT).send(ar -> {
+         HttpResponse<Buffer> response = ar.result();
+         context.assertEquals(200, response.statusCode());
+         context.assertEquals("application/json", response.headers().get("content-type"));
+         context.assertEquals("{\"name\":\"cutenames\",\"version\":1}", response.body().toString());
+         async.complete();
       });
    }
 
    @Test
-   public void put_cute_name_endpoint(TestContext context) {
+   public void post_cute_name_endpoint(TestContext context) {
       final Async async = context.async();
-      WebClient client = WebClient.wrap(httpClient);
       JsonObject body = new JsonObject().put("id", "123").put("name", "Fidelia");
-      client.post(port, host, "/api/cutenames").sendJsonObject(body, ar -> {
+      webClient.post(port, host, CUTE_NAMES_API_ENDPOINT).sendJsonObject(body, ar -> {
          if (ar.succeeded()) {
             HttpResponse<Buffer> response = ar.result();
             context.assertEquals(201, response.statusCode());
@@ -104,11 +120,10 @@ public class CuteNamesRestAPITest {
    }
 
    @Test
-   public void put_cute_name_with_bad_format(TestContext context) {
+   public void post_cute_name_with_bad_format(TestContext context) {
       final Async async = context.async();
-      WebClient client = WebClient.wrap(httpClient);
       JsonObject body = new JsonObject().put("id", 123).put("name", "Bad");
-      client.post(port, host, "/api/cutenames").sendJsonObject(body, ar -> {
+      webClient.post(port, host, CUTE_NAMES_API_ENDPOINT).sendJsonObject(body, ar -> {
          if (ar.succeeded()) {
             HttpResponse<Buffer> response = ar.result();
             context.assertEquals(500, response.statusCode());
@@ -122,9 +137,8 @@ public class CuteNamesRestAPITest {
    @Test
    public void put_cute_name_without_id_endpoint(TestContext context) {
       final Async async = context.async();
-      WebClient client = WebClient.wrap(httpClient);
       JsonObject body = new JsonObject().put("name", "Elaia");
-      client.post(port, host, "/api/cutenames").sendJsonObject(body, ar -> {
+      webClient.post(port, host, CUTE_NAMES_API_ENDPOINT).sendJsonObject(body, ar -> {
          if (ar.succeeded()) {
             HttpResponse<Buffer> response = ar.result();
             context.assertEquals(201, response.statusCode());
@@ -139,9 +153,8 @@ public class CuteNamesRestAPITest {
    @Test
    public void put_cute_name_without_name(TestContext context) {
       final Async async = context.async();
-      WebClient client = WebClient.wrap(httpClient);
       JsonObject emptyBody = new JsonObject();
-      client.post(port, host, "/api/cutenames").sendJsonObject(emptyBody, ar -> {
+      webClient.post(port, host, CUTE_NAMES_API_ENDPOINT).sendJsonObject(emptyBody, ar -> {
          if (ar.succeeded()) {
             HttpResponse<Buffer> response = ar.result();
             context.assertEquals(400, response.statusCode());
@@ -156,24 +169,22 @@ public class CuteNamesRestAPITest {
    @Test
    public void get_cute_name_with_id(TestContext context) {
       final Async async = context.async();
-      httpClient.getNow(port, host, "/api/cutenames/42", response -> {
-         response.handler(body -> {
-            context.assertEquals(200, response.statusCode());
-            context.assertEquals("{\"name\":\"Oihana\"}", body.toString());
-            async.complete();
-         });
+      webClient.get(port, host, CUTE_NAMES_API_ENDPOINT + "/42").send(ar -> {
+         HttpResponse<Buffer> response = ar.result();
+         context.assertEquals(200, response.statusCode());
+         context.assertEquals("{\"name\":\"Oihana\"}", response.body().toString());
+         async.complete();
       });
    }
 
    @Test
    public void get_cute_name_with_unexisting_id(TestContext context) {
       final Async async = context.async();
-      httpClient.getNow(port, host, "/api/cutenames/666", response -> {
-         response.handler(body -> {
-            context.assertEquals(404, response.statusCode());
-            context.assertEquals("Cute name 666 not found", body.toString());
-            async.complete();
-         });
+      webClient.get(port, host, CUTE_NAMES_API_ENDPOINT + "/666").send(ar -> {
+         HttpResponse<Buffer> response = ar.result();
+         context.assertEquals(404, response.statusCode());
+         context.assertEquals("Cute name 666 not found", response.body().toString());
+         async.complete();
       });
    }
 }

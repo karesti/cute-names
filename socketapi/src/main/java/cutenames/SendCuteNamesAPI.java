@@ -59,10 +59,11 @@ public class SendCuteNamesAPI extends CacheAccessVerticle {
    public final class CuteNamesListener {
       @ClientCacheEntryCreated
       @SuppressWarnings("unused")
-      public void created(ClientCacheEntryCreatedEvent<Integer> e) {
-         String cuteName = defaultCache.get(e.getKey());
-         logger.log(Level.INFO, "publish cute name " + cuteName);
-         vertx.eventBus().publish(CUTE_NAMES_ADDRESS, cuteName);
+      public void created(ClientCacheEntryCreatedEvent<String> e) {
+         defaultCache.getAsync(e.getKey()).whenComplete((n, ex) -> {
+            logger.info("Publish name " + n);
+            vertx.eventBus().publish(CUTE_NAMES_ADDRESS, n);
+         });
       }
    }
 

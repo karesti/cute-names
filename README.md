@@ -1,9 +1,24 @@
 This is a simple example on how to build and deploy your first vert.x application.
 
-## Infinispan 
+- REST API
+- SockJS API
 
-## Vert.x
+## Running locally 
 
+- Download Infinispan server and unzip
+- Start Infinispan Standalone Server `./infinispan-server/bin/standalone.sh` 
+
+### REST API
+
+
+### SockJS bridge R
+
+## Running the Node application
+
+- `cd cute-react`
+- run `npm install`
+- run `npm start`
+- Go to `http://localhost:9000/`
 
 
 ## Deploying the solution on Openshift
@@ -15,4 +30,6 @@ This is a simple example on how to build and deploy your first vert.x applicatio
 
 Docker daemon has to be running !
 
-./start-openshift.sh
+- Start Openshift cluster with the service catalog `./bin/start-openshift.sh`
+- Start Infinispan cluster `./bin/start-infinispan.sh`
+- Deploy the verticles `mvn fabric8:deploy`
